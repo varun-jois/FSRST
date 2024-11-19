@@ -54,7 +54,7 @@ class RefDataset(Dataset):
 
         # get the rf image and downsample it
         refs = []
-        for i in range(3):
+        for i in range(1, 4):
             rf = Image.open(f"{self.ipath}/rf/{img_name}/{i}.png")
             rf = rf.resize((HR_SIZE, HR_SIZE), resample=Image.BICUBIC)
             if self.augment:
