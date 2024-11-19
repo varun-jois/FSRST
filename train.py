@@ -7,10 +7,10 @@ import numpy
 import random
 from torch import nn
 from torch.utils.data import DataLoader 
-from torch.optim.lr_scheduler import MultiStepLR, CosineAnnealingWarmRestarts
+from torch.optim.lr_scheduler import MultiStepLR
 from torch.utils.tensorboard import SummaryWriter
 from utils.utils import train_loop, valid_loop, model_save, model_load
-from models.loss import CharbonierLoss
+from data import RefDataset
 from argparse import ArgumentParser
 
 # torch.autograd.set_detect_anomaly(True)
@@ -65,30 +65,8 @@ logging.info(config)
 dpath = pth['data']
 
 # creating the dataset
-if config['dataset'] == 'CelebA':
-    if config["model_name"] == 'STAlign128':
-        from data.CelebADataset import CelebADatasetAlign
-        train_data = CelebADatasetAlign(pth['train'])
-        valid_data = CelebADatasetAlign(pth['valid'])
-    else:
-        from data.CelebADataset import CelebADataset
-        # train_json = f'{dpath}/train.json'
-        # valid_json = f'{dpath}/valid.json'
-        # train_data = CelebADataset(train_json, pth['train'], hr_size=thp['hr_size'], lr_size=thp['lr_size'], type='train', use_ref=thp['use_ref'], use_hr_as_ref=thp['use_hr_as_ref'])
-        # valid_data = CelebADataset(valid_json, pth['valid'], hr_size=thp['hr_size'], lr_size=thp['lr_size'], type='valid', use_ref=thp['use_ref'], use_hr_as_ref=thp['use_hr_as_ref'])
-        train_data = CelebADataset('train', config)
-        valid_data = CelebADataset('valid', config)
-elif config['dataset'] == 'DFD':
-    if config["model_name"] in ['STAlign32', 'STAlign128']:
-        from data.DFDDataset import DFDDatasetAlign2
-        train_data = DFDDatasetAlign2(pth['train'], augment=True)
-        valid_data = DFDDatasetAlign2(pth['valid'])
-    else:
-        from data.DFDDataset import DFDDataset
-        train_data = DFDDataset(pth['train'], augment=True, use_ref=thp['use_ref'], use_hr_as_ref=thp['use_hr_as_ref'])
-        valid_data = DFDDataset(pth['valid'], augment=False, use_ref=thp['use_ref'], use_hr_as_ref=thp['use_hr_as_ref'])
-else:
-    raise ValueError('Invalid dataset selected in the config.yaml')
+train_data = RefDataset(pth['train'], augment=True)
+valid_data = RefDataset(pth['valid'], augment=False)
 
 # creating the dataloaders
 train_dataloader = DataLoader(train_data, batch_size=thp['batch_size'], shuffle=True, 

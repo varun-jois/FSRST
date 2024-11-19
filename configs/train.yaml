@@ -1,9 +1,8 @@
-name: exp_84
-description: 'Repeat of exp 70 with new reconstruction block.'
-model_name: HIMEv2
-dataset: CelebA
+name: exp_0
+description: ''
+model_name: FSRST
+dataset: RefDataset
 paths:
-  data: '/home/varun/datasets/CelebAMask-HQ' #'/home/varun/datasets/CelebAMask-HQ'  '/home/varun/datasets/DFD_images_small'
   train: '/home/varun/datasets/CelebAMask-HQ/train' #'/home/varun/datasets/CelebAMask-HQ/train' '/home/varun/datasets/DFD_images_small/train'
   valid: '/home/varun/datasets/CelebAMask-HQ/valid' # '/home/varun/datasets/CelebAMask-HQ/valid' '/home/varun/datasets/DFD_images_small/valid'
   checkpoints: 'checkpoints'
