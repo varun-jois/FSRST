@@ -52,7 +52,7 @@ class RefDataset(Dataset):
         hr = self.transform(hr)
         lr = self.transform(lr)
 
-        # get the rf image and downsample it
+        # get the rf image and make it the same size as hr image
         refs = []
         for i in range(1, 4):
             rf = Image.open(f"{self.ipath}/rf/{img_name}/{i}.png")
