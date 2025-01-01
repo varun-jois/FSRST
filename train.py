@@ -75,22 +75,12 @@ valid_dataloader = DataLoader(valid_data, batch_size=thp['batch_size'], shuffle=
                               worker_init_fn=seed_worker, generator=g)
 
 # creating the model
-if config["model_name"] == 'HIMEv2':
-    from models.HIMEv2 import HIME as Net
-elif config["model_name"] == 'HIMEv3':
-    from models.HIMEv2 import HIMEv3 as Net
+if config["model_name"] == 'FSRST':
+    from models.FSRST import FSRST as Net
 elif config["model_name"] == 'STAlign128':
     from models.STAlign import STAlign128 as Net
 elif config["model_name"] == 'STAlign32':
     from models.STAlign import STAlign32 as Net
-elif config["model_name"] == 'ResBlock':
-    from models.basicblock import ResBlock as Net
-elif config["model_name"] == 'ResNetSR':
-    from models.ResNetSR import ResNetSR as Net
-elif config["model_name"] == 'HIME':
-    from models.HIME import HIME as Net
-elif config["model_name"][:5] == 'Model':
-    from models.Model_1 import Model as Net
 else:
     raise ValueError('Invalid model name selected.')
 

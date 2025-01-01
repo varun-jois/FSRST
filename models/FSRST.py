@@ -3,7 +3,6 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import models.basicblock as B
-from torchvision.ops import DeformConv2d
 
 
 # for making the weights of the offset convolution zero
@@ -98,7 +97,8 @@ class SpatialTransformerAlign(nn.Module):
 class SpatialTransformerAlignParams(nn.Module):
     """
     This block aligns the reference and lr features together
-    using a spatial transformer.
+    using a spatial transformer. Returns the 2x3 matrix used for
+    affine transformation.
     """
 
     def __init__(self) -> None:
@@ -153,46 +153,6 @@ class SpatialTransformerAlignParams(nn.Module):
         ref_a = F.grid_sample(ref, grid, align_corners=False, padding_mode='reflection')
         return ref_a
 
-
-class DeformConvAlign(nn.Module):
-    """
-    The alignment module that aligns using deformable convolutions. 
-    Using the unmodulated version.
-    Involves two steps: 
-    1) offsets = Convolutions([F_lq, F_ref]) 
-    2) F_ref_align = DeformableConvolution(F_ref, offsets)
-    """
-
-    def __init__(self, in_nc=3, out_nc=3):
-        super(DeformConvAlign, self).__init__()
-        
-        # create a convolutions and initialize weights to zeros
-        self.conv = nn.Sequential(
-            nn.BatchNorm2d(6, affine=True),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(6, 12, 3, padding=1),
-            nn.BatchNorm2d(12, affine=True),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(12, 18, 3, padding=1)
-        )
-        self.conv.apply(init_weights)
-
-        # Initialize the Deformable Convolution layer
-        self.deform_conv = DeformConv2d(in_channels=in_nc, out_channels=out_nc, kernel_size=3, padding=1)
-        self.relu = nn.ReLU(inplace=True)
-
-    def forward(self, lq, ref):
-        """
-        lq: lq features
-        ref: ref features
-        """
-        # calculate the offsets
-        offsets = self.conv(torch.cat((ref, lq), 1)) # (batch, 2 * kernel^2, h, w)
-
-        # align and perform relu
-        ref_a = self.deform_conv(ref, offsets)
-        ref_a = self.relu(ref_a)
-        return ref_a  
 
 
 class FeatureAggregation(nn.Module):
@@ -349,10 +309,10 @@ class PixelShuffle_ICNR(nn.Sequential):
 """
 Original HIMEv2
 """
-class HIME(nn.Module):
+class FSRST(nn.Module):
 
     def __init__(self, nc, uf, lr) -> None:
-        super(HIME, self).__init__()
+        super(FSRST, self).__init__()
 
         # pixelunshuffle for the ref images
         self.unshuffle = nn.PixelUnshuffle(uf)
@@ -409,222 +369,5 @@ class HIME(nn.Module):
         out_shape = pred.shape[2]
         lq = F.interpolate(lq, (out_shape, out_shape), mode='bicubic', 
                            align_corners=False).clamp(min=0, max=1)
-        # lq = F.interpolate(lq, (out_shape, out_shape), 
-        #                    mode='nearest').clamp(min=0, max=1)
 
-        # return lq + pred
         return (lq + pred).clamp(min=0, max=1)
-
-"""
-Experimental HIMEv2
-"""
-# class HIME(nn.Module):
-
-#     def __init__(self, nc) -> None:
-#         super(HIME, self).__init__()
-
-#         # pixelunshuffle for the ref images
-#         self.unshuffle = nn.PixelUnshuffle(4)
-        
-#         # the feature extractors
-#         self.feature_extraction_lq = FeatureExtractor(nb=5, nc=nc)
-#         self.feature_extraction_ref = FeatureExtractor(in_nc=16, nb=5, nc=nc)   
-
-#         # the feature alignment block
-#         self.feature_align = SpatialTransformerAlign()
-
-#         # the feature aggregation block
-#         self.feature_aggregation = FeatureAggregationExp()
-
-#         # the reconstruction block
-#         # self.reconstruction = FrameReconstruction2(out_nc=48, nc1=nc, nc2=nc)
-#         self.reconstruction = FrameReconstruction(out_nc=48, nc=nc, nb=20, in_nc=12)
-
-#         # pixel shuffle
-#         self.shuffle = nn.PixelShuffle(4)
-
-#         # # pixel shuffle with icnr initialization
-#         # self.shuffle = PixelShuffle_ICNR(64, 48)
-
-#         # last convolution
-#         self.last = nn.Conv2d(3, 3, 3, padding=1)
-
-#     def forward(self, lq, refs):
-#         """
-#         lq: The low quality frame.
-#         refs: The high quality reference frames in a list.
-#         """
-#         # perform the unshuffle
-#         refs_f = [self.unshuffle(r) for r in refs]
-
-#         # extract features
-#         lq_f = self.feature_extraction_lq(lq)
-#         refs_f = [self.feature_extraction_ref(r) for r in refs_f]
-
-#         # align ref features
-#         refs_f = [self.feature_align(lq_f, r) for r in refs_f]
-
-#         # aggregate all features
-#         feat_agg = self.feature_aggregation(lq_f, refs_f)
-
-#         # produce the final output
-#         pred = self.reconstruction(feat_agg)
-
-#         # get back to hq size
-#         pred = self.shuffle(pred)
-#         pred = self.last(pred)
-
-#         # use bicubic to upscale lq
-#         out_shape = pred.shape[2]
-#         lq = F.interpolate(lq, (out_shape, out_shape), mode='bicubic', 
-#                            align_corners=False).clamp(min=0, max=1)
-
-#         # return lq + pred
-#         return (lq + pred).clamp(min=0, max=1)
-    
-"""
-HIMEv3 #################################################
-"""
-
-# class HIMEv3(nn.Module):
-
-#     def __init__(self, nc) -> None:
-#         super(HIMEv3, self).__init__()
-
-#         # pixelunshuffle for the ref images
-#         self.unshuffle = nn.PixelUnshuffle(4)
-        
-#         # the feature extractors
-#         self.feature_extraction_lq = FeatureExtractor(nb=5, nc=nc)
-#         self.feature_extraction_ref = FeatureExtractor(in_nc=16, nb=5, nc=nc)   
-
-#         # the feature alignment block
-#         self.feature_align = SpatialTransformerAlign()
-
-#         # the feature aggregation block
-#         self.feature_aggregation = FeatureAggregationExp()
-
-#         # the reconstruction block
-#         self.reconstruction = FrameReconstruction2(out_nc=48, nc1=nc, nc2=nc)
-#         # self.reconstruction = FrameReconstruction(out_nc=48, nc=nc, nb=20)
-
-#         # pixel shuffle
-#         self.shuffle = nn.PixelShuffle(4)
-
-#         # # pixel shuffle with icnr initialization
-#         # self.shuffle = PixelShuffle_ICNR(64, 48)
-
-#         # last convolution
-#         self.last = nn.Conv2d(3, 3, 3, padding=1)
-
-#     def forward(self, lq, refs):
-#         """
-#         lq: The low quality frame.
-#         refs: The high quality reference frames in a list.
-#         """
-#         # perform the unshuffle
-#         refs_f = [self.unshuffle(r) for r in refs]
-
-#         # extract features
-#         lq_f = self.feature_extraction_lq(lq)
-#         refs_f = [self.feature_extraction_ref(r) for r in refs_f]
-
-#         # align ref features
-#         refs_f = [self.feature_align(lq_f, r) for r in refs_f]
-
-#         # aggregate all features
-#         feat_agg = self.feature_aggregation(lq_f, refs_f)
-
-#         # produce the final output
-#         pred = self.reconstruction(feat_agg)
-
-#         # get back to hq size
-#         pred = self.shuffle(pred)
-#         pred = self.last(pred)
-
-#         # use bicubic to upscale lq
-#         out_shape = pred.shape[2]
-#         lq = F.interpolate(lq, (out_shape, out_shape), mode='bicubic', 
-#                            align_corners=False).clamp(min=0, max=1)
-
-#         # return lq + pred
-#         return (lq + pred).clamp(min=0, max=1)
-
-"""
-Exp 62 - Aligning raw references and their feature representations.
-"""
-# class HIME(nn.Module):
-
-#     def __init__(self, nc) -> None:
-#         super(HIME, self).__init__()
-
-#         self.feature_align_input = SpatialTransformerAlignParams()  # it's a dumb name so that it's also an offset param
-
-#         # pixelunshuffle for the ref images
-#         self.unshuffle = nn.PixelUnshuffle(4)
-        
-#         # the feature extractors
-#         self.feature_extraction_lq = FeatureExtractor(nb=5, nc=nc)
-#         self.feature_extraction_ref = FeatureExtractor(in_nc=16, nb=3, nc=nc)   
-
-#         # the feature alignment block
-#         self.feature_align = SpatialTransformerAlign()
-
-#         # the feature aggregation block
-#         self.feature_aggregation = FeatureAggregationExp()
-
-#         # the reconstruction block
-#         self.reconstruction = FrameReconstruction(out_nc=48, nc=nc, nb=20)
-
-#         # pixel shuffle
-#         self.shuffle = nn.PixelShuffle(4)
-
-#         # # pixel shuffle with icnr initialization
-#         # self.shuffle = PixelShuffle_ICNR(64, 48)
-
-#         # last convolution
-#         self.last = nn.Conv2d(3, 3, 3, padding=1)
-
-#     def forward(self, lq, refs):
-#         """
-#         lq: The low quality frame.
-#         refs: The high quality reference frames in a list.
-#         """
-#         # separate the lr and hr refs
-#         refs_lr = refs[::2]
-#         refs_hr = refs[1::2]
-#         assert refs_lr[0].shape[2] == 32
-#         assert refs_hr[0].shape[2] == 128
-#         # align the refs first
-#         for i in range(len(refs_lr)):
-#             theta = self.feature_align_input(lq, refs_lr[i])
-#             refs_hr[i] = self.feature_align_input.align(refs_hr[i], theta)
-
-#         # perform the unshuffle
-#         refs_f = [self.unshuffle(r) for r in refs_hr]
-
-#         # extract features
-#         lq_f = self.feature_extraction_lq(lq)
-#         refs_f = [self.feature_extraction_ref(r) for r in refs_f]
-
-#         # align ref features
-#         refs_f = [self.feature_align(lq_f, r) for r in refs_f]
-
-#         # aggregate all features
-#         feat_agg = self.feature_aggregation(lq_f, refs_f)
-
-#         # produce the final output
-#         pred = self.reconstruction(feat_agg)
-
-#         # get back to hq size
-#         pred = self.shuffle(pred)
-#         pred = self.last(pred)
-
-#         # use bicubic to upscale lq
-#         out_shape = pred.shape[2]
-#         lq = F.interpolate(lq, (out_shape, out_shape), mode='bicubic', 
-#                            align_corners=False).clamp(min=0, max=1)
-
-#         # return lq + pred
-#         return (lq + pred).clamp(min=0, max=1)
-    
