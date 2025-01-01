@@ -1,6 +1,9 @@
 """
 This file contains all the spatial transformers we used
-for alignment experiments.
+for alignment experiments. The purpose of these modules is to align
+image (img) to a reference (ref) that's very similar. The module does this by finding
+the greatest overlap between the two images. It has an identical architecture
+to the alignment modules used in FSRST. 
 """
 
 import torch
@@ -11,9 +14,7 @@ from torchvision.transforms.functional import center_crop
 
 class STAlign32(nn.Module):
     """
-    Designed for 32x32 input
-    This block aligns the reference and lr features together
-    using a spatial transformer.
+    Designed for 32x32 inputs
     """
 
     def __init__(self, nc) -> None:
@@ -38,14 +39,15 @@ class STAlign32(nn.Module):
         self.fc[2].weight.data.zero_()
         self.fc[2].bias.data.copy_(torch.tensor([1, 0, 0, 0, 1, 0], dtype=torch.float))
 
-    def forward(self, lq, refs):
+    def forward(self, img, refs):
         """
-        lq: lq features
-        ref: ref features
+        img: our image
+        refs: the reference image we are trying to align with img. It is stored 
+              in a list to match our train.py script. 
         """
         # concatenate lq and rfd
         ref = refs[0]
-        x = torch.cat((lq, ref), 1)
+        x = torch.cat((img, ref), 1)
 
         # pass it through the conv layers
         x = self.conv(x)
@@ -56,16 +58,14 @@ class STAlign32(nn.Module):
         
         # perform the sampling of rf (not rfd) based on the theta parameters
         theta = theta.view(-1, 2, 3)
-        # grid = F.affine_grid(theta, ref.size(), align_corners=False)
-        # ref_a = F.grid_sample(ref, grid, align_corners=False, padding_mode='reflection')
+        grid = F.affine_grid(theta, ref.size(), align_corners=False)
+        ref_a = F.grid_sample(ref, grid, align_corners=False, padding_mode='reflection')
 
-        return theta
+        return ref_a
 
 class STAlign128(nn.Module):
     """
     Designed for 128x128 input
-    This block aligns the reference and lr features together
-    using a spatial transformer.
     """
 
     def __init__(self, nc) -> None:
@@ -97,14 +97,15 @@ class STAlign128(nn.Module):
         self.fc[-1].weight.data.zero_()
         self.fc[-1].bias.data.copy_(torch.tensor([1, 0, 0, 0, 1, 0], dtype=torch.float))
 
-    def forward(self, lq, refs):
+    def forward(self, img, refs):
         """
-        lq: lq features
-        refs: ref features which is stored in a list to fit the training loop methods.
+        img: our image
+        refs: the reference image we are trying to align with img. It is stored 
+              in a list to match our train.py script. 
         """
         # concatenate lq and rfd
         ref = refs[0]
-        x = torch.cat((lq, ref), 1)
+        x = torch.cat((img, ref), 1)
 
         # pass it through the conv layers
         x = self.conv(x)
@@ -115,7 +116,6 @@ class STAlign128(nn.Module):
         
         # perform the sampling of rf (not rfd) based on the theta parameters
         theta = theta.view(-1, 2, 3)
-        # for exp 32
         grid = F.affine_grid(theta, ref.size(), align_corners=False)
         ref_a = F.grid_sample(ref, grid, align_corners=False, padding_mode='reflection')
         # ref_a = center_crop(ref_a, 96)
