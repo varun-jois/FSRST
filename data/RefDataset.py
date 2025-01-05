@@ -32,7 +32,7 @@ class RefDataset(Dataset):
     
     def __getitem__(self, index):
         hr_path = self.hr_paths[index]
-        img_name = Path(hr_path)
+        img_name = Path(hr_path).stem
 
         # get the hr and lr images
         hr = Image.open(hr_path).resize((HR_SIZE, HR_SIZE), resample=Image.BICUBIC)
