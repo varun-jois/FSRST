@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import MultiStepLR
 from torch.utils.tensorboard import SummaryWriter
 from utils.utils import train_loop, valid_loop, model_save, model_load
-from data.RefDataset import RefDataset
+from data.RefDataset import RefDatasetSR, RefDatasetAlign
 from argparse import ArgumentParser
 
 # torch.autograd.set_detect_anomaly(True)
@@ -63,8 +63,12 @@ logging.info(config)
 
 
 # creating the dataset
-train_data = RefDataset(pth['train'], augment=True)
-valid_data = RefDataset(pth['valid'], augment=False)
+if config['dataset'] == 'RefDatasetSR':
+    train_data = RefDatasetSR(pth['train'], augment=True)
+    valid_data = RefDatasetSR(pth['valid'], augment=False)
+else:
+    train_data = RefDatasetAlign(pth['train'], augment=True)
+    valid_data = RefDatasetAlign(pth['valid'], augment=False)
 
 # creating the dataloaders
 train_dataloader = DataLoader(train_data, batch_size=thp['batch_size'], shuffle=True, 

@@ -13,7 +13,10 @@ HR_SIZE = 128
 LR_SIZE = 32
 
 
-class RefDataset(Dataset):
+class RefDatasetSR(Dataset):
+    """
+    Reference based dataset for super-resolution.
+    """
 
     def __init__(self, ipath, augment=False) -> None:
         """
@@ -69,3 +72,48 @@ class RefDataset(Dataset):
             hr, lr, refs = rotate(hr, lr, refs)
 
         return hr, lr, refs
+
+
+class RefDatasetAlign(Dataset):
+    """
+    Reference based dataset for alignment.
+    """
+
+    def __init__(self, ipath, augment=False) -> None:
+        """
+        ipath: Path where the image and reference images are located.
+        augment: Whether to perform rotation and flipping augmentation.
+        """
+        self.ipath = ipath
+        self.augment = augment
+        self.img_paths = sorted(glob(f"{ipath}/im/*"))
+        self.transform = T.Compose([
+            T.ToTensor()
+        ])
+
+    def __len__(self):
+        return len(self.raw_paths)
+    
+    def __getitem__(self, index):
+        img_path = self.img_paths[index]
+        img_name = Path(img_path).stem
+
+        # get the image and reference
+        im = Image.open(img_path).resize((HR_SIZE, HR_SIZE), resample=Image.BICUBIC)
+        rf = Image.open(f"{self.ipath}/rf/{img_name}.png").resize((HR_SIZE, HR_SIZE), resample=Image.BICUBIC)
+        
+        # converting to pytorch tensors
+        im = self.transform(im)
+        refs = [self.transform(rf)]
+
+        # we take a center crop to ignore the border pixels.
+        # if you change this, make the change in STAlign.py as well
+        # here we are assuming 128x128 pixel images
+        center = F.center_crop(im, 124)
+
+        # data augmentations
+        if self.augment:
+            center, im, refs = flip(center, im, refs)
+            center, im, refs = rotate(center, im, refs)
+
+        return center, im, refs

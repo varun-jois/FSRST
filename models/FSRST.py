@@ -307,7 +307,7 @@ class PixelShuffle_ICNR(nn.Sequential):
 
     
 """
-Original HIMEv2
+Original FSRST
 """
 class FSRST(nn.Module):
 

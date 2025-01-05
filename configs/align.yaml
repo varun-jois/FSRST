@@ -1,0 +1,25 @@
+name: exp_1
+description: ''  # place to write a description of the experiment.
+model_name: STAlign128
+dataset: RefDatasetAlign
+paths:
+  train: '/home/varun/datasets/FSRST/align/train' #'/home/varun/datasets/CelebAMask-HQ/train' '/home/varun/datasets/DFD_images_small/train'
+  valid: '/home/varun/datasets/FSRST/align/valid' # '/home/varun/datasets/CelebAMask-HQ/valid' '/home/varun/datasets/DFD_images_small/valid'
+  checkpoints: 'checkpoints'
+model:  
+  nc: 32  # number of channels
+train:
+  seed: 13
+  batch_size: 8 
+  device: cuda
+  learning_rate: 0.0001 # 0.0001 0.00005 0.000025 0.00001
+  offset_lr: 0.00001 # 0.00001 0.000005 0.000001
+  scheduler: true
+  steps: [600, 900]  # because in exp_28 the best results were around 400 mark
+  gamma: 0.5  # gamma used by the scheduler.
+  epoch_start: 0  # which epoch to begin the training. If model exists, then gets loaded.
+  epochs: 1000  # number of epochs to train.
+  valid_epoch: 5  # number of epochs for validation.
+  save_epoch: 100  # number of epochs to save a checkpoint.
+  save_best: true  # if true then model gets saved if loss < save_thresh and best
+  save_thresh: 0.021  # ignored if save_best is false

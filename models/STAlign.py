@@ -118,6 +118,9 @@ class STAlign128(nn.Module):
         theta = theta.view(-1, 2, 3)
         grid = F.affine_grid(theta, ref.size(), align_corners=False)
         ref_a = F.grid_sample(ref, grid, align_corners=False, padding_mode='reflection')
-        # ref_a = center_crop(ref_a, 96)
+        
+        # take a center crop to ignore border pixels
+        # make a change in RefDatasetAlign in RefDataset.py if changing this
+        ref_a = center_crop(ref_a, 124)
 
         return ref_a
