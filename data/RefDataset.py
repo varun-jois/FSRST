@@ -17,7 +17,7 @@ class RefDataset(Dataset):
 
     def __init__(self, ipath, augment=False) -> None:
         """
-        ipath: Path where the hq and lq images are located.
+        ipath: Path where the hr and lr images are located.
         augment: Whether to use data augmentation.
         """
         self.ipath = ipath

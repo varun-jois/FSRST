@@ -3,8 +3,8 @@ description: ''
 model_name: FSRST
 dataset: RefDataset
 paths:
-  train: '/home/varun/datasets/CelebAMask-HQ/train' #'/home/varun/datasets/CelebAMask-HQ/train' '/home/varun/datasets/DFD_images_small/train'
-  valid: '/home/varun/datasets/CelebAMask-HQ/valid' # '/home/varun/datasets/CelebAMask-HQ/valid' '/home/varun/datasets/DFD_images_small/valid'
+  train: '/home/varun/datasets/DFD/DFD_images_small/train' #'/home/varun/datasets/CelebAMask-HQ/train' '/home/varun/datasets/DFD_images_small/train'
+  valid: '/home/varun/datasets/DFD/DFD_images_small/valid' # '/home/varun/datasets/CelebAMask-HQ/valid' '/home/varun/datasets/DFD_images_small/valid'
   checkpoints: 'checkpoints'
 model:
   nc: 64  # 64 for HIMEv2 and 32 for STAlign
