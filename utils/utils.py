@@ -3,7 +3,6 @@ import torch
 import torchvision.transforms as T
 import torch.nn.functional as F
 from torch.nn.utils import clip_grad_norm_
-from models.Transformer import RSRT as Net
 from torchvision.utils import save_image
 import torch.nn as nn
 import logging
@@ -33,34 +32,11 @@ def train_loop(dataloader, model_data, losses, device):
         loss = losses['loss_rec'](pred, hq)
         # Backpropagation
         loss.backward()
-        # params = {n: p.max().item() for n, p in model.named_parameters()}
-        # p_max = max(params, key=lambda x: params.get(x))
-        # p_min = min(params, key=lambda x: params.get(x))
-        # logging.info(f'param max {p_max} -> {params[p_max]}')
-        # logging.info(f'param min {p_min} -> {params[p_min]}')
-        # logging.info(f'pred max min {pred.max().item()} | {pred.min().item()}')
-        # logging.info(f'loss {loss.item()}')
-        if loss.isinf().any().item():
-            logging.info('Saving in checkpoints/anomaly')
-            torch.save(model.state_dict(), f'/home/varun/fsrt/checkpoints/anomaly/mdl.pth')
-            raise 
-        # grads = [p.grad.detach().flatten() for p in model.parameters() 
-        #          if p.grad is not None]
-        # norm = torch.cat(grads)
-        # vals = [norm.min().item(), norm.mean().item(), norm.max().item(), norm.norm().item()]
-        # logging.info(f'mean before clip: {vals}')
-        # norm = clip_grad_norm_(model.parameters(), 0.9)
-        # grads = [p.grad.detach().flatten() for p in model.parameters() 
-        #          if p.grad is not None]
-        # norm = torch.cat(grads)
-        # vals = [norm.min().item(), norm.mean().item(), norm.max().item(), norm.norm().item()]
-        # logging.info(f'norm after clip: {vals}')
         optimizer.step()
 
         # save the epoch loss
         epoch_loss += loss.item()
     epoch_loss /= (batch + 1)
-    #print(f'Train loss: {epoch_loss:.5f}')
     logging.info(f'Train loss: {epoch_loss:.5f}')
     return epoch_loss
     
@@ -87,7 +63,6 @@ def valid_loop(dataloader, model, losses, device):
             loss = losses['loss_rec'](pred, hq)
             epoch_loss += loss.item()   
         epoch_loss /= (batch + 1)
-        #print(f'Valid loss: {epoch_loss:.5f}')
         logging.info(f'Valid loss: {epoch_loss:.5f}')
     return epoch_loss
 
@@ -96,7 +71,6 @@ def valid_loop(dataloader, model, losses, device):
 # model saving and loading
 def model_save(model_data, epoch, checkpt_path, best=False):
     for name, model in model_data.items():
-         #print(f'Saving {checkpt_path}/{epoch}_{name}.pth')
          if best:
              logging.info(f'Saving {checkpt_path}/best_{name}.pth')
              torch.save(model.state_dict(), f'{checkpt_path}/best_{name}.pth')
@@ -107,7 +81,6 @@ def model_save(model_data, epoch, checkpt_path, best=False):
 
 def model_load(model_data, epoch_start, checkpt_path):
     for name, model in model_data.items():
-        #print(f'Loading weights {checkpt_path}/{epoch_start}_{name}.pth')
         logging.info(f'Loading weights {checkpt_path}/{epoch_start}_{name}.pth')
         model.load_state_dict(torch.load(f'{checkpt_path}/{epoch_start}_{name}.pth'))
     

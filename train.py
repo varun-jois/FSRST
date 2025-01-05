@@ -90,22 +90,10 @@ logging.info(model)
 total_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
 logging.info(f'Total params: {total_params:,}')
 
-# using a pretrained alignment network that we don't want to update with backprop
-# if config['name'] == 'exp_47':
-#     sd = torch.load('checkpoints/exp_46/2100_raw_mdl.pth')
-#     model.module.feature_align.load_state_dict(sd)
-#     for p in model.module.feature_align.parameters():
-#         p.requires_grad = False
-#     logging.info(f'Loaded the pretrained alignment module.')
 
-# creating parameter groups
-# if config["model_name"] == 'HIME':
-#     offset_params = ['module.feature_align.conv.0.weight', 'module.feature_align.conv.0.bias',
-#                     'module.feature_align.conv.2.weight', 'module.feature_align.conv.2.bias']
-#     base_params = [p for n, p in model.named_parameters() if n not in offset_params]
-#     offset_params = [p for n, p in model.named_parameters() if n in offset_params]
-
-if config["model_name"].startswith('HIME'):
+# creating a parameter group for the alignment module
+# to give it a lower learning rate
+if config["model_name"] == 'FSRST':
     base_params = [p for n, p in model.named_parameters() if not n.startswith('module.feature_align') and p.requires_grad]
     logging.info(f'Number of base params: {len(base_params)}')
     offset_params = [p for n, p in model.named_parameters() if n.startswith('module.feature_align') and p.requires_grad]
@@ -113,7 +101,7 @@ if config["model_name"].startswith('HIME'):
 
 
 # create optimizer
-if config["model_name"].startswith('HIME'):
+if config["model_name"] == 'FSRST':
     optimizer = torch.optim.Adam([
         {'params': base_params},
         {'params': offset_params, 'lr': thp['offset_lr']}
@@ -136,7 +124,7 @@ if thp['epoch_start'] != 0:
     model_load(model_data, thp['epoch_start'], checkpt_path)
     # manually setting the lr for the groups if resuming training
     optimizer.param_groups[0]['lr'] = thp['learning_rate']
-    if config["model_name"].startswith('HIME'):
+    if config["model_name"] == 'FSRST':
         optimizer.param_groups[1]['lr'] = thp['offset_lr']
     if thp['scheduler']:
         scheduler.last_epoch = thp['epoch_start']
