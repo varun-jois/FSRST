@@ -61,8 +61,6 @@ writer = SummaryWriter(f'runs/{config["name"]}')
 # store the config file in the log
 logging.info(config)
 
-# getting data paths
-dpath = pth['data']
 
 # creating the dataset
 train_data = RefDataset(pth['train'], augment=True)
