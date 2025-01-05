@@ -18,7 +18,7 @@ train:
   steps: [600, 900]  # because in exp_28 the best results were around 400 mark
   gamma: 0.5  # gamma used by the scheduler.
   epoch_start: 0  # which epoch to begin the training. If model exists, then gets loaded.
-  epochs: 1000  # number of epochs to train.
+  epochs: 100  # number of epochs to train.
   valid_epoch: 5  # number of epochs for validation.
   save_epoch: 100  # number of epochs to save a checkpoint.
   save_best: true  # if true then model gets saved if loss < save_thresh and best
