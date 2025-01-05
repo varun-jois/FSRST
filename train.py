@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from torch.optim.lr_scheduler import MultiStepLR
 from torch.utils.tensorboard import SummaryWriter
 from utils.utils import train_loop, valid_loop, model_save, model_load
-from data import RefDataset
+from data.RefDataset import RefDataset
 from argparse import ArgumentParser
 
 # torch.autograd.set_detect_anomaly(True)
