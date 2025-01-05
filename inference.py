@@ -34,7 +34,7 @@ checkpt_path = f"{pth['checkpoints']}/{config['name']}"
 if 'best_mdl.pth' in glob(f"{checkpt_path}/*"):
     cp_num = 'best'
 else:
-    cp_num = config['thp']['epochs']
+    cp_num = thp['epochs']
 
 # path for saving the results
 save_path = f"inference/{config['name']}"
