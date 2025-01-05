@@ -3,8 +3,8 @@ description: ''  # place to write a description of the experiment.
 model_name: FSRST  # or STAlign128
 dataset: RefDatasetSR  # or RefDatasetAlign
 paths:
-  train: '/home/varun/datasets/FSRST/sr/train' #'/home/varun/datasets/CelebAMask-HQ/train' '/home/varun/datasets/DFD_images_small/train'
-  valid: '/home/varun/datasets/FSRST/sr/valid' # '/home/varun/datasets/CelebAMask-HQ/valid' '/home/varun/datasets/DFD_images_small/valid'
+  train: '/home/varun/FSRST/sample_data/sr/train'
+  valid: '/home/varun/FSRST/sample_data/sr/valid'
   checkpoints: 'checkpoints'
 model:  
   nc: 64  # number of channels
